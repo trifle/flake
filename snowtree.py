@@ -46,31 +46,49 @@ def flake():
         ctx.stroke()
         ctx.restore()
 
-def snowtree(scale, depth):
+def maketree(scale, depth):
     if scale <= 1 or depth <= 0:
-        return
+        return None
 
     def v(mu):
         return min(0.8, max(0.2, random.normalvariate(mu, 0.5)))
 
-    def subtree(adv, scale, rotate=0.0):
+
+    uscale = v(0.7) * scale
+    uadv = v(0.3) * uscale
+    utree = maketree(uscale, depth - 1)
+
+    rscale = v(0.7) * scale
+    radv = v(0.3) * rscale
+    rtree = maketree(rscale, depth - 1)
+
+    return [(uadv, utree), (radv, rtree)]
+
+def drawtree(tree):
+    if tree is None:
+        return
+
+    def subtree(adv, tree, rotate=0.0):
         ctx.move_to(0, 0)
         ctx.save()
         if rotate != 0:
             ctx.rotate(rotate * 2 * math.pi / 6)
         ctx.translate(0, adv)
         ctx.line_to(0, 0)
-        snowtree(scale, depth - 1)
+        drawtree(tree)
         ctx.restore()
 
-    uscale = v(0.7) * scale
-    uadv = v(0.4) * uscale
-    subtree(uadv, uscale)
-
-    rscale = v(0.5) * scale
-    radv = v(0.6) * rscale
-    subtree(radv, rscale, rotate=-1)
-    subtree(radv, rscale, rotate=1)
+    u, r = tree
+    uadv, utree = u
+    radv, rtree = r
+    ctx.move_to(0, 0)
+    ctx.save()
+    ctx.translate(0, uadv / 2)
+    ctx.line_to(0, 0)
+    subtree(uadv / 2, utree)
+    subtree(radv, rtree, 1)
+    subtree(radv, rtree, -1)
+    ctx.restore()
 
 if len(sys.argv) == 2:
     seed = int(sys.argv[1])
@@ -79,8 +97,9 @@ else:
     print(seed)
 random.seed(seed)
 
+tree = maketree(500, 6)
 ctx.move_to(0, 0)
-snowtree(250, 3)
-#flake()
+drawtree(tree)
+flake()
 ctx.stroke()
 surface.finish()
