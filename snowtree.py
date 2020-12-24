@@ -91,7 +91,7 @@ def drawtree(tree):
     ctx.restore()
 
 if len(sys.argv) == 2:
-    seed = int(sys.argv[1])
+    seed = bytes(sys.argv[1], encoding="utf-8")
 else:
     seed = random.randrange(10000)
     print(seed)
