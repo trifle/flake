@@ -8,13 +8,8 @@ width = SIDE
 center = SIDE // 2
 surface = cairo.SVGSurface("snowtree.svg", width, height)
 ctx = cairo.Context(surface)
-ctx.set_source_rgb(0.0, 0.0, 0.0)
+ctx.set_source_rgb(0.0, 0x88/255, 0xaa/255)
 ctx.translate(center, center)
-refl = cairo.Matrix(
-    -1.0, 0.0,
-     0.0, 1.0,
-     0.0, 0.0,
-)
 
 def stroke_path(ctx, path):
     for type, points in path:
@@ -24,17 +19,6 @@ def stroke_path(ctx, path):
             ctx.line_to(*points)
         else:
             assert False
-
-def mirror():
-    path = ctx.copy_path()
-    for r in [False, True]:
-        ctx.save()
-        if r:
-            ctx.transform(refl)
-        ctx.new_path()
-        stroke_path(ctx, path)
-        ctx.stroke()
-        ctx.restore()
 
 def flake():
     path = ctx.copy_path()
