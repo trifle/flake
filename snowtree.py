@@ -1,34 +1,16 @@
 #!/usr/bin/python3
 import cairo, math, random, sys
 
-# Set up Cairo for drawing. Origin is in upper-left corner.
-SIDE = 1200
-height = SIDE
+# Page is 4 inches square at 72 dpi.
+SIDE = 4 * 72
 width = SIDE
-center = SIDE // 2
+height = SIDE
 surface = cairo.SVGSurface("snowtree.svg", width, height)
 ctx = cairo.Context(surface)
 ctx.set_source_rgb(0.0, 0x88/255, 0xaa/255)
+# Move origin to center of page.
+center = SIDE // 2
 ctx.translate(center, center)
-
-def stroke_path(ctx, path):
-    for type, points in path:
-        if type == cairo.PATH_MOVE_TO:
-            ctx.move_to(*points)
-        elif type == cairo.PATH_LINE_TO:
-            ctx.line_to(*points)
-        else:
-            assert False
-
-def flake():
-    path = ctx.copy_path()
-    for i in range(6):
-        ctx.save()
-        ctx.rotate(i * 2 * math.pi / 6)
-        ctx.new_path()
-        stroke_path(ctx, path)
-        ctx.stroke()
-        ctx.restore()
 
 def maketree(scale, depth):
     if scale <= 1 or depth <= 0:
@@ -74,6 +56,33 @@ def drawtree(tree):
     subtree(radv, rtree, -1)
     ctx.restore()
 
+def stroke_path(ctx, path):
+    for type, points in path:
+        if type == cairo.PATH_MOVE_TO:
+            ctx.move_to(*points)
+        elif type == cairo.PATH_LINE_TO:
+            ctx.line_to(*points)
+        else:
+            assert False
+
+def flake():
+    path = ctx.copy_path()
+    ctx.new_path()
+    for i in range(6):
+        ctx.save()
+        ctx.rotate(i * 2 * math.pi / 6)
+        stroke_path(ctx, path)
+        ctx.restore()
+
+def max_xy():
+    m = 0
+    path = ctx.copy_path()
+    for type, points in path:
+        if type == cairo.PATH_MOVE_TO or type == cairo.PATH_LINE_TO:
+            for c in points:
+                m = max(m, abs(c))
+    return m
+
 if len(sys.argv) == 2:
     seed = bytes(sys.argv[1], encoding="utf-8")
 else:
@@ -85,5 +94,14 @@ tree = maketree(500, 6)
 ctx.move_to(0, 0)
 drawtree(tree)
 flake()
+
+side = max_xy()
+path = ctx.copy_path()
+ctx.new_path()
+# Scale to take up 90% of page.
+nside = 0.95 * 0.5 * SIDE / side
+ctx.scale(nside, nside)
+stroke_path(ctx, path)
 ctx.stroke()
+
 surface.finish()
